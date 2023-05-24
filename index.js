@@ -232,7 +232,7 @@ function animation() {
         weapon.x - enemy.x,
         weapon.y - enemy.y
       );
-
+      // Here adding enemy killing transitions
       if (distanceBetweenWeaponAndEnemy - weapon.radius - enemy.radius < 1) {
         if (enemy.radius > 18) {
           gsap.to(enemy, {
