@@ -11,6 +11,7 @@ canvas.height = innerHeight;
 const context = canvas.getContext("2d");
 const lightWeaponDamage = 10;
 const heavyWeaponDamage = 30;
+const hugeWeaponDamage = 50;
 let difficulty = 2;
 const form = document.querySelector("form");
 const scoreBoard = document.querySelector(".scoreBoard");
@@ -108,6 +109,28 @@ class Weapon {
   }
 }
 
+// Creating Huge Weapon Class
+class HugeWeapon {
+  constructor(x, y, damage) {
+    this.x = x;
+    this.y = y;
+    this.color = "rgba(47,255,0,1)";
+    this.damage = damage;
+  }
+
+  // Creating an Rectangle and drawing it with draw()
+  draw() {
+    context.beginPath();
+    context.fillStyle = this.color;
+    context.fillRect(this.x, this.y, 200, canvas.height);
+  }
+
+  update() {
+    this.draw();
+    this.x += 10;
+  }
+}
+
 //--------------------------------
 // Creating Enemy Class
 class Enemy {
@@ -190,6 +213,8 @@ const weapons = [];
 const enemies = [];
 // Particle Array
 const particles = [];
+// Huge Weapons array
+const hugeWeapons = [];
 
 // -----------------Function to Spawn Enemy at Random location-------------------
 const spawnEnemy = () => {
@@ -254,10 +279,18 @@ function animation() {
     }
   });
 
+  // Generating Huge Weapon
+  hugeWeapons.forEach((hugeWeapon, hugeWeaponIndex) => {
+    if (hugeWeapon.x > canvas.width) {
+      hugeWeapons.splice(hugeWeaponIndex, 1);
+    } else {
+      hugeWeapon.update();
+    }
+  });
   // Generating bullets
   weapons.forEach((weapon, weaponIndex) => {
     weapon.update();
-    //Remmoving weapons if they are off screen
+    //Removing weapons if they are off screen
     if (
       weapon.x + weapon.radius < 1 ||
       weapon.y + weapon.radius < 1 ||
@@ -267,6 +300,7 @@ function animation() {
       weapons.splice(weaponIndex, 1);
     }
   });
+
   // Generating enemies
   enemies.forEach((enemy, enemyIndex) => {
     enemy.update();
@@ -281,6 +315,19 @@ function animation() {
     if (distanceBetweenPlayerAndEnemy - dani.radius - enemy.radius < 1) {
       cancelAnimationFrame(animationId);
     }
+    
+    hugeWeapons.forEach((hugeWeapon) => {
+      // Finding distance between Huge Weapon and Enemy
+      const distanceBetweenHugeWeaponAndEnemy = hugeWeapon.x - enemy.x;
+      if (
+        distanceBetweenHugeWeaponAndEnemy <= 200 &&
+        distanceBetweenHugeWeaponAndEnemy >= -200
+      ) {
+        setTimeout(() => {
+          enemies.splice(enemyIndex, 1);
+        }, 0);
+      }
+    });
 
     weapons.forEach((weapon, weaponIndex) => {
       //  Finding distance between Weapon and Enemy
@@ -372,6 +419,12 @@ canvas.addEventListener("contextmenu", (e) => {
       heavyWeaponDamage
     )
   );
+});
+
+addEventListener("keypress", (e) => {
+  if (e.key === " ") {
+    hugeWeapons.push(new HugeWeapon(0, 0, hugeWeaponDamage));
+  }
 });
 
 animation();
