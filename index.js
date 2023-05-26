@@ -1,3 +1,12 @@
+// Importing sound effects
+const introMusic = new Audio("./sound/introSong.mp3");
+const shootingSound = new Audio("./sound/shoooting.mp3");
+const killEnemySound = new Audio("./sound/killEnemy.mp3");
+const gameOverSound = new Audio("./sound/gameOver.mp3");
+const heavyWeaponSound = new Audio("./sound/heavyWeapon.mp3");
+const hugeWeaponSound = new Audio("./sound/hugeWeapon.mp3");
+
+introMusic.play();
 // Creating canvas
 const canvas = document.createElement("canvas");
 
@@ -11,7 +20,8 @@ canvas.height = innerHeight;
 const context = canvas.getContext("2d");
 const lightWeaponDamage = 10;
 const heavyWeaponDamage = 30;
-const hugeWeaponDamage = 50;
+let playerScore = 0;
+
 let difficulty = 2;
 const form = document.querySelector("form");
 const scoreBoard = document.querySelector(".scoreBoard");
@@ -19,6 +29,10 @@ const scoreBoard = document.querySelector(".scoreBoard");
 // Evennt listener for difficulty form
 document.querySelector("input").addEventListener("click", (e) => {
   e.preventDefault();
+
+  // Stopping Intro Music
+  introMusic.pause();
+
   // Making form invisible
   form.style.display = "none";
   // Making scoreboard visible
@@ -43,6 +57,47 @@ document.querySelector("input").addEventListener("click", (e) => {
     return (difficulty = 12);
   }
 });
+
+// Game Over screen
+const gameOverLoader = () => {
+  // Creating Game-Over screen, div and play again button and high score element
+  const gameOverBanner = document.createElement("div");
+  const gameOverBtn = document.createElement("button");
+  const highScore = document.createElement("div");
+
+  // Showing high score using localStorage
+  highScore.innerText = `High Score : ${
+    localStorage.getItem("highScore")
+      ? localStorage.getItem("highScore")
+      : playerScore
+  }`;
+
+  const oldHighScore =
+    localStorage.getItem("highScore") && localStorage.getItem("highScore");
+
+  if (oldHighScore < playerScore) {
+    localStorage.setItem("highScore", playerScore);
+
+    // Updating Player Score in Score board in html
+    highScore.innerHTML = `High Score : ${playerScore}`;
+  }
+
+  // Adding text to Play Again button
+  gameOverBtn.innerText = "Play Again";
+
+  gameOverBanner.appendChild(highScore);
+
+  gameOverBanner.appendChild(gameOverBtn);
+
+  // Making reload on clicking Play Again button
+  gameOverBtn.onclick = () => {
+    window.location.reload();
+  };
+
+  gameOverBanner.classList.add("gameover");
+
+  document.querySelector("body").appendChild(gameOverBanner);
+};
 
 //------------------------------------------------- Creating Player, Enemy, Weapon, and other classes----------------------
 // Defining Player Position in center
@@ -114,8 +169,7 @@ class HugeWeapon {
   constructor(x, y, damage) {
     this.x = x;
     this.y = y;
-    this.color = "rgba(47,255,0,1)";
-    this.damage = damage;
+    this.color = "rgba(255,0,133,1)";
   }
 
   // Creating an Rectangle and drawing it with draw()
@@ -127,7 +181,7 @@ class HugeWeapon {
 
   update() {
     this.draw();
-    this.x += 10;
+    this.x += 20;
   }
 }
 
@@ -262,6 +316,9 @@ function animation() {
   // Making recursion
   animationId = requestAnimationFrame(animation);
 
+  // Updating Player Score in Score board in html
+  scoreBoard.innerHTML = `Score : ${playerScore}`;
+
   // clearing stroke in rectangle form but imagine it as a new rectangle
   // means clearing canvas on each frame
   context.fillStyle = "rgb(49,49,49, 0.2)";
@@ -314,8 +371,10 @@ function animation() {
     // Stopping game if Enemy hits Player
     if (distanceBetweenPlayerAndEnemy - dani.radius - enemy.radius < 1) {
       cancelAnimationFrame(animationId);
+      gameOverSound.play();
+      return gameOverLoader();
     }
-    
+
     hugeWeapons.forEach((hugeWeapon) => {
       // Finding distance between Huge Weapon and Enemy
       const distanceBetweenHugeWeaponAndEnemy = hugeWeapon.x - enemy.x;
@@ -323,6 +382,8 @@ function animation() {
         distanceBetweenHugeWeaponAndEnemy <= 200 &&
         distanceBetweenHugeWeaponAndEnemy >= -200
       ) {
+        // Increasing player score after killing enemy
+        playerScore += 10;
         setTimeout(() => {
           enemies.splice(enemyIndex, 1);
         }, 0);
@@ -343,6 +404,7 @@ function animation() {
             radius: enemy.radius - weapon.damage,
           });
           setTimeout(() => {
+            killEnemySound.play();
             weapons.splice(weaponIndex, 1);
           }, 0);
         }
@@ -356,7 +418,14 @@ function animation() {
               })
             );
           }
+          // Increasing player score after killing enemy
+          playerScore += 10;
+
+          // Rendering player score in scoreboard element
+          scoreBoard.innerHTML = `Score: ${playerScore}`;
+
           setTimeout(() => {
+            killEnemySound.play();
             enemies.splice(enemyIndex, 1);
             weapons.splice(weaponIndex, 1);
           }, 0);
@@ -370,6 +439,8 @@ function animation() {
 
 // Event listener for Light weapon(left click)
 canvas.addEventListener("click", (e) => {
+  shootingSound.play();
+
   // finding angle with A-tan-2 method
   // angle between player position(center) and click co-ordinates
   const myAngle = Math.atan2(
@@ -397,6 +468,15 @@ canvas.addEventListener("click", (e) => {
 // Event listener for Heavy weapon(Right click)
 canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
+
+  // Decreasing player score for using heavy weapon
+  if (playerScore <= 0) return;
+  heavyWeaponSound.play();
+  playerScore -= 2;
+
+  // Updating player score in scoreboard in html
+  scoreBoard.innerHTML = `Score : ${playerScore}`;
+
   // finding angle with A-tan-2 method
   // angle between player position(center) and click co-ordinates
   const myAngle = Math.atan2(
@@ -423,8 +503,25 @@ canvas.addEventListener("contextmenu", (e) => {
 
 addEventListener("keypress", (e) => {
   if (e.key === " ") {
-    hugeWeapons.push(new HugeWeapon(0, 0, hugeWeaponDamage));
+    // Decreasing player score for using huge weapon
+    if (playerScore < 20) return;
+    playerScore -= 20;
+
+    // Updating player score in scoreboard in html
+    scoreBoard.innerHTML = `Score : ${playerScore}`;
+
+    hugeWeaponSound.play();
+
+    hugeWeapons.push(new HugeWeapon(0, 0));
   }
+});
+
+addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+});
+
+addEventListener("resize", () => {
+  window.location.reload();
 });
 
 animation();
