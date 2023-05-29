@@ -169,7 +169,7 @@ class HugeWeapon {
   constructor(x, y, damage) {
     this.x = x;
     this.y = y;
-    this.color = "rgba(255,0,133,1)";
+    this.color = "rgba(260,63,10,1)";
   }
 
   // Creating an Rectangle and drawing it with draw()
